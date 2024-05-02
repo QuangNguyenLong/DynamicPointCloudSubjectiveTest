@@ -3,9 +3,9 @@ This repository contains a dynamic point cloud (Volumetric video) subjective tes
 
 ## Required Software
 
-Unity 2019.3.19f1.
+[Unity 2019.3.19f1](https://unity.com/releases/editor/whats-new/2021.3.19).
 
-SteamVR for HTC Vive Pro.
+[SteamVR](https://store.steampowered.com/app/250820/SteamVR/) for HTC Vive Pro.
 
 ## Content Preparation
 
@@ -43,6 +43,4 @@ To get started, follow these steps:
 - To reconduct the `Impacts of Temporal Quality Variation` test, play the scene `Assets\Scene\VersionSwitch\Training.unity` and follow the instructions.
 - To reconduct the `Impact of Stalling` test, play the scene `Assets\Scene\Stall\longdressStall.unity` and follow the instructions.
 
-### Base Player
-### Configure the Test
 
