@@ -43,4 +43,18 @@ To get started, follow these steps:
 - To reconduct the `Impacts of Temporal Quality Variation` test, play the scene `Assets\Scene\VersionSwitch\Training.unity` and follow the instructions.
 - To reconduct the `Impact of Stalling` test, play the scene `Assets\Scene\Stall\longdressStall.unity` and follow the instructions.
 
+## Citation
+
+```
+@inproceedings{nguyen2024modeling,
+title = {Modeling User Quality of Experience in Adaptive Point Cloud Streaming},
+author = {Nguyen, Duc V and Quang, Nguyen Long and Hien, Tran Thuy and Huyen, Nguyen Ngoc and Huong, Truong Thu and Nam, Pham Ngoc},
+booktitle = {Proc. IEEE International Symposium on Multimedia},
+pages = {1--6},
+month = {Dec.},
+year = {2024},
+address = {Tokyo,Japan}
+}
+```
+
 
