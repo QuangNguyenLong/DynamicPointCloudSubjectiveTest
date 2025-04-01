@@ -15,9 +15,9 @@ public class FrameRateVariation : BasePlayer
     [SerializeField] private GameObject UI;
 
     // Two example arrays defining micro-stutter or jitter behavior. You can expand these or load from external configs.
-    private float[] _dipEverySeconds = {2f, 4f}; // frequent/infrequent dips
-    private int[] _dipTargets = {25, 20, 15};    // example dip targets
-    private float[] _dipDurations = {0.05f, 0.1f, 0.25f}; // variable durations
+    private float[] _dipEverySeconds = { 2f, 4f }; // frequent/infrequent dips
+    private int[] _dipTargets = { 25, 20, 15 };    // example dip targets
+    private float[] _dipDurations = { 0.05f, 0.1f, 0.25f }; // variable durations
     private bool _inDip = false;
     private float _dipTimer = 0f;
     private float _dipDuration = 0.1f;
@@ -79,10 +79,10 @@ public class FrameRateVariation : BasePlayer
     protected override void ImporterNextFrame()
     {
         var inPlayContent = GetCurrentContent();
-        string filename = inPlayContent.GetFullPath() + "\\" + inPlayContent.GetContentName() 
+        string filename = inPlayContent.GetFullPath() + "\\" + inPlayContent.GetContentName()
                           + (_currentImportFrame % (_LastFrame + 1 - _StartFrame)).ToString("D4") + ".ply\0";
         int count = FrameIO.PCreader.CountVertices(filename);
-        if (count <= 0) 
+        if (count <= 0)
             UnityEngine.Debug.LogError("Fail to import frame. Filename: " + filename);
 
         DPCFrameBuffer temp = new(count);
