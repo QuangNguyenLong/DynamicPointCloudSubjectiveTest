@@ -83,7 +83,10 @@ public class FrameRateVariation : BasePlayer
                           + (_currentImportFrame % (_LastFrame + 1 - _StartFrame)).ToString("D4") + ".ply\0";
         int count = FrameIO.PCreader.CountVertices(filename);
         if (count <= 0)
+        {
             UnityEngine.Debug.LogError("Fail to import frame. Filename: " + filename);
+            return;
+        }
 
         DPCFrameBuffer temp = new(count);
         FrameIO.PCreader.LoadPlyFileData(filename, temp.vertex, temp.color);
@@ -155,6 +158,7 @@ public class FrameRateVariation : BasePlayer
 
     protected override void SetCurrentFrameBuffer()
     {
+        DeleteBuffers();
         _posBuffer = new ComputeBuffer(_buffer.Peek().NumVerts, 12);
         _colorBuffer = new ComputeBuffer(_buffer.Peek().NumVerts, 4);
 

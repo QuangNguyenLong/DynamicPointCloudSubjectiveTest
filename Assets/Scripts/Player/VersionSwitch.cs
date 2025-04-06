@@ -9,9 +9,6 @@ public class VersionSwitch : BasePlayer
     [SerializeField] private string contentName = "longdress";
     [SerializeField] private string nextcontent = "soldier";
     [SerializeField] private GameObject UI;
-    protected ComputeBuffer _posBuffer;
-    protected ComputeBuffer _colorBuffer;
-
     private List<TestHandler.TestSample>[] _combinations;
     private int _TestNo = 0;
 
@@ -36,7 +33,7 @@ public class VersionSwitch : BasePlayer
     {
         if (_currentImportFrame == -1)
             _currentImportFrame = 0;
-         return _combinations[_TestNo][_currentImportFrame % 300 / 60].Content; 
+        return _combinations[_TestNo][_currentImportFrame % 300 / 60].Content;
     }
 
     protected override int GetStartFrame() => GetCurrentContent().GetStartFrame();
@@ -151,11 +148,11 @@ public class VersionSwitch : BasePlayer
         DeleteBuffers();
         if (_TestNo == _combinations.Length - 1)
         {
-            if(nextcontent != null)
+            if (nextcontent != null)
                 SceneManager.LoadScene($"Assets/Scenes/{nextcontent}VersionSwitch.unity");
             return;
         }
-        _TestNo ++;
+        _TestNo++;
         _currentImportFrame = _currentRenderFrame = GetCurrentContent().GetStartFrame();
         _buffer = new MyMath.Queue<DPCFrameBuffer>(_bufferSize);
         Buffering();
@@ -163,7 +160,7 @@ public class VersionSwitch : BasePlayer
         Play();
     }
 
-    public void SaveMOS5(){File.AppendAllText(_MOSDataPath, $"{_TestNo},5\n");}
+    public void SaveMOS5() { File.AppendAllText(_MOSDataPath, $"{_TestNo},5\n"); }
     public void SaveMOS4() { File.AppendAllText(_MOSDataPath, $"{_TestNo},4\n"); }
     public void SaveMOS3() { File.AppendAllText(_MOSDataPath, $"{_TestNo},3\n"); }
     public void SaveMOS2() { File.AppendAllText(_MOSDataPath, $"{_TestNo},2\n"); }

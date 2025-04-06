@@ -8,12 +8,8 @@ public class DPCPlayer : BasePlayer
     [SerializeField] private int _StartFrame = 0;
     [SerializeField] private int _LastFrame = 299;
     [SerializeField] private int _FrameRate = 30;
-    public Vector3 OffSet = new (0f, 0f, 0f);
+    public Vector3 OffSet = new(0f, 0f, 0f);
     public Vector3 Rotation = new(0f, 0f, 0f);
-
-    protected ComputeBuffer _posBuffer;
-    protected ComputeBuffer _colorBuffer;
-
     private DPCHandler _content;
     protected override void Initialize()
     {
@@ -84,6 +80,6 @@ public class DPCPlayer : BasePlayer
         _buffer.Enqueue(temp);
     }
 
-    public int FramesLeft { get { return _LastFrame - _currentRenderFrame;  } }
+    public int FramesLeft { get { return _LastFrame - _currentRenderFrame; } }
 
 }

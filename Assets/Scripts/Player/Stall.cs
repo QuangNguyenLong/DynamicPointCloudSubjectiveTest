@@ -18,11 +18,7 @@ public class Stall : BasePlayer
 
     public Vector3 OffSet = new(0f, 0f, 0f);
     public Vector3 Rotation = new(0f, 0f, 0f);
-
-    protected ComputeBuffer _posBuffer;
-    protected ComputeBuffer _colorBuffer;
-
-    [SerializeField] private int[] StallAt = {60, 120, 180, 240};
+    [SerializeField] private int[] StallAt = { 60, 120, 180, 240 };
     private int[][] StallCount = { new int[]{0, 7, 0, 0},
                                     new int[]{0, 15, 0, 0},
                                     new int[]{0, 22, 0, 0},
@@ -71,7 +67,7 @@ public class Stall : BasePlayer
         List<int> result = new List<int>();
 
         int index = 0;
-        int tmp = - 1;
+        int tmp = -1;
         while (tmp < lastFrame)
         {
             if (tmp == stallAt[index] && stallCount[index] > 0) { stallCount[index]--; }
@@ -85,11 +81,11 @@ public class Stall : BasePlayer
     private static int[][] GenerateStallArrays(int[] stallAt, int[][] stallCount, int lastFrame)
     {
         List<int[]> results = new List<int[]>();
-        foreach(var c in stallCount)
+        foreach (var c in stallCount)
             results.Add(GenerateStallArray(stallAt, c, lastFrame));
         return results.ToArray();
     }
-protected override void Initialize()
+    protected override void Initialize()
     {
         _offset = new(0f, 0f, 0f);
         _scale = new(0.002f, 0.002f, 0.002f);
@@ -174,7 +170,7 @@ protected override void Initialize()
         FrameIO.PCreader.LoadPlyFileData(filename, temp.vertex, temp.color);
         _buffer.Enqueue(temp);
 
-        ImportIndex += ImportIndex == ImportFrame[_TestNo].Length - 1 ? 0 : 1; 
+        ImportIndex += ImportIndex == ImportFrame[_TestNo].Length - 1 ? 0 : 1;
     }
 
     public void GoToNextTestSample()
