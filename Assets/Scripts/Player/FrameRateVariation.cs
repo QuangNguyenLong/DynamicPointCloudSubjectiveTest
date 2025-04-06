@@ -40,6 +40,9 @@ public class FrameRateVariation : BasePlayer
 
     private int _TestNo = 0;
 
+    protected ComputeBuffer _posBuffer;
+    protected ComputeBuffer _colorBuffer;
+
     protected override void Initialize()
     {
         // Similar to Stall/VersionSwitch setup
@@ -67,9 +70,9 @@ public class FrameRateVariation : BasePlayer
         float realDuration = _Duration <= 0f ? ((float)(_LastFrame - _StartFrame + 1) / _FrameRate) : _Duration;
 
         _content = new DPCHandler(_ContentName, _ContentRate, _StartFrame, _LastFrame, _FrameRate, realDuration);
-        _buffer = new MyMath.Queue<DPCFrameBuffer>(_bufferSize);
-        Buffering();
-        SetCurrentFrameBuffer();
+        //_buffer = new MyMath.Queue<DPCFrameBuffer>(_bufferSize);
+        //Buffering();
+        //SetCurrentFrameBuffer();
     }
 
     protected override int GetStartFrame() => _StartFrame;
