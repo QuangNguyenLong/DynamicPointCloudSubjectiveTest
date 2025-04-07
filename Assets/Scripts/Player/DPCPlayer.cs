@@ -83,7 +83,4 @@ public class DPCPlayer : BasePlayer
         FrameIO.PCreader.LoadPlyFileData(filename, temp.vertex, temp.color);
         _buffer.Enqueue(temp);
     }
-
-    public int FramesLeft { get { return _LastFrame - _currentRenderFrame;  } }
-
 }

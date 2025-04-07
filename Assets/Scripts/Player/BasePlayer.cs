@@ -123,5 +123,5 @@ public abstract class BasePlayer : MonoBehaviour
     }
     public Vector3 Offset => _offset;
     public float Duration => GetCurrentContent().GetDuration() <= 0 ? (float)(GetCurrentContent().GetLastFrame() - GetCurrentContent().GetStartFrame() + 1) / GetCurrentContent().GetFrameRate() : GetCurrentContent().GetDuration();
-
+    public int FramesLeft { get { return GetCurrentContent().GetLastFrame() - _currentRenderFrame; } }
 }
