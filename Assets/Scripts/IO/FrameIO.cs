@@ -1,7 +1,7 @@
 using System.Runtime.InteropServices;
 public class FrameIO
 {
-    private const string ImporterDllPath = @"Assets\lib\Importer.dll";
+    private const string ImporterDllPath = @"E:\Quang\Project\dpc-test\Assets\lib\Importer.dll";
 
 
     [DllImport(ImporterDllPath, CallingConvention = CallingConvention.Cdecl)]
