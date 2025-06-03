@@ -23,6 +23,18 @@ public abstract class BasePlayer : MonoBehaviour
     protected bool _isRotating = false;
     protected bool _isClockwise = true;
 
+    // Timer display paramms
+    private float _playStartedAt = -1f;          // wall-clock start
+    private float _pausedAccum   =  0f;          // time spent in Pause()
+
+    public  float ElapsedTime =>                  // expose to UI
+           _playStartedAt < 0 ? 0 :
+           (_isPlaying ?  Time.time              // live
+                        : _pauseStamp)           // frozen
+           - _playStartedAt                      // since Play()
+           - _pausedAccum;                       // minus pauses
+
+    private float _pauseStamp;                   // when Pause began
 
     protected virtual void Start()
     {
@@ -80,7 +92,6 @@ public abstract class BasePlayer : MonoBehaviour
             {
                 EndOfContent();
             }
-                    
         }
         RenderCurrentFrame();
     }
@@ -109,10 +120,19 @@ public abstract class BasePlayer : MonoBehaviour
     protected abstract void SetCurrentFrameBuffer();
     protected abstract void ImporterNextFrame();
 
-    public void Play() { _isPlaying = true; }
+    public void Play()
+    {
+        if (_playStartedAt < 0) _playStartedAt = Time.time; // first ever Play()
+        else                    _pausedAccum   += Time.time - _pauseStamp;
+        _isPlaying = true;
+    }
     public bool IsPlaying => _isPlaying;
-    public void Pause() { _isPlaying = false; }
-    public void Replay() 
+    public void Pause()
+    {
+        _isPlaying  = false;
+        _pauseStamp = Time.time;
+    }
+    public void Replay()
     {
         _currentImportFrame = _currentRenderFrame = GetCurrentContent().GetStartFrame();
         _buffer = new MyMath.Queue<DPCFrameBuffer>(_bufferSize);

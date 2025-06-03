@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -109,10 +110,19 @@ public class FrameRateVariation : BasePlayer
         _colorBuffer.SetData(_buffer.Peek().color);
     }
 
+    protected override void Update()
+    {
+        base.Update();                          // existing call
+
+        // crude debug print, once per rendered frame
+        if (_isPlaying)
+            Debug.Log($"[{_variantIndex}] t = {ElapsedTime:F2}s");
+    }
+
     protected override void ImporterNextFrame()
     {
         var path = $"{_content.GetFullPath()}\\{_content.GetContentName()}{_importFrames[_importCursor]:D4}.ply\0";
-        var cnt  = FrameIO.PCreader.CountVertices(path);
+        var cnt = FrameIO.PCreader.CountVertices(path);
         if (cnt <= 0) Debug.LogError($"Cannot import {path}");
 
         var fbuf = new DPCFrameBuffer(cnt);
@@ -175,9 +185,13 @@ public class FrameRateVariation : BasePlayer
 
     private sealed class FRVVariant
     {
+        public Func<int,int> FpsForFrame;   // NEW – returns the intended fps at frame f
         public string Name;
         public Func<int, int> StrideForFrame;  // f -> stride (≥1)
     }
+
+	private const string PATTERN_LOG_DIR = "Assets/FRV_Patterns";
+
 
     private void BuildVariantTable()
     {
@@ -200,10 +214,10 @@ public class FrameRateVariation : BasePlayer
         });
 
         // ─── 10-21  Micro-stutter: fixed width=3f (100 ms) ─────────────────────
-        _variants.AddRange(MicroGrid(fixedWidth:true));
+        _variants.AddRange(MicroGrid(fixedWidth: true));
 
         // ─── 22-33  Micro-stutter: variable width 1/3/8f ───────────────────────
-        _variants.AddRange(MicroGrid(fixedWidth:false));
+        _variants.AddRange(MicroGrid(fixedWidth: false));
 
         // ─── 34-39  Jitter (bounded random walk) ───────────────────────────────
         _variants.AddRange(new[]{
@@ -216,8 +230,8 @@ public class FrameRateVariation : BasePlayer
         });
 
         // ─── 40-41  Hard jitter controls (drop 10 % / 20 %) ────────────────────
-        _variants.Add(HardJitter(0.10f, seed:201));  // 40
-        _variants.Add(HardJitter(0.20f, seed:202));  // 41
+        _variants.Add(HardJitter(0.10f, seed: 201));  // 40
+        _variants.Add(HardJitter(0.20f, seed: 202));  // 41
     }
 
     // ---------------- helper builders -----------------------------------------
@@ -227,6 +241,7 @@ public class FrameRateVariation : BasePlayer
         var stride = Mathf.RoundToInt((float)SOURCE_FPS / fps);
         return new FRVVariant
         {
+            FpsForFrame = _ => fps,
             Name = $"Baseline_{fps}fps",
             StrideForFrame = _ => stride
         };
@@ -240,6 +255,7 @@ public class FrameRateVariation : BasePlayer
 
         return new FRVVariant
         {
+            FpsForFrame = f => (f>=135&&f<=164) ? dipFps : baseFps,
             Name = $"SingleDip_{baseFps}to{dipFps}_30f",
             StrideForFrame = f => (f >= 135 && f <= 164) ? dipStride : baseStride
         };
@@ -270,6 +286,12 @@ public class FrameRateVariation : BasePlayer
 
         return new FRVVariant
         {
+            FpsForFrame = f =>
+            {
+                int cycle = f / intervalFrames;
+                int w     = widths[cycle % widths.Length];
+                return w == 0 ? baseFps : dipFps;
+            },
             Name = name,
             StrideForFrame = f =>
             {
@@ -299,6 +321,7 @@ public class FrameRateVariation : BasePlayer
 
         return new FRVVariant
         {
+            FpsForFrame = _ => targetFps,
             Name = $"Jitter_{targetFps}_±{range}_Every{stepPeriod}f",
             StrideForFrame = f => table[f / stepPeriod]
         };
@@ -314,6 +337,7 @@ public class FrameRateVariation : BasePlayer
 
         return new FRVVariant
         {
+            FpsForFrame = _ => SOURCE_FPS,
             Name = $"HardJitter_Drop{dropRatio:P0}",
             StrideForFrame = f => drops.Contains(f) ? 2 : 1  // skip this frame? stride=2
         };
@@ -321,20 +345,42 @@ public class FrameRateVariation : BasePlayer
 
     #endregion ------------------------------------------------------------------
 
-    // build full import list (length ≤ 300) ------------------------------------
-// Put inside FRVPlayer
+private void DumpPattern(string variantName, List<int> playedFrames)
+{
+    // Ensure folder exists
+    System.IO.Directory.CreateDirectory(PATTERN_LOG_DIR);
+
+    // Compose file content
+    string content = $"Duration = {playedFrames.Count / SOURCE_FPS:F2} s\n" +
+                     $"Sequence = {string.Join(",", playedFrames)}";
+
+    // Write to file
+    System.IO.File.WriteAllText($"{PATTERN_LOG_DIR}/{variantName}.txt", content);
+}
 private int[] BuildPlayedSequence(FRVVariant v)
 {
-    var played = new List<int>(TOTAL_FRAMES * 4);   // rough upper bound
+    var played   = new List<int>(TOTAL_FRAMES*2);
+    float errAcc = 0f;
+    int   prevFps= -1;
 
-    for (int src = _startFrame; src <= _lastFrame;  src++)
+    for (int src = _startFrame; src <= _lastFrame; ++src)
     {
-        int stride = Mathf.Max(1, v.StrideForFrame(src));   // stride depends on *source* index
-        for (int h = 0; h < stride; h++)
-            played.Add(src);                                // duplicate
+        int fps = v.FpsForFrame(src);          // ← actual target rate (25, 20, …)
+
+        // whenever the segment changes, reset the accumulator
+        if (fps != prevFps) { errAcc = 0f; prevFps = fps; }
+
+        float step = SOURCE_FPS / (float)fps;  // e.g. 1.2, 1.5, …
+        errAcc    += step;
+        int dup     = (int)errAcc;             // 1 or 2 or …
+        errAcc     -= dup;
+
+        for (int k = 0; k < dup; ++k)
+            played.Add(src);                   // show/dwell this source frame
     }
 
-    played.Add(played[^1]);   // sentinel for BasePlayer
+    played.Add(played[^1]);                    // sentinel for BasePlayer
+    DumpPattern(v.Name, played);               // ← the logging helper you added
     return played.ToArray();
 }
 }
