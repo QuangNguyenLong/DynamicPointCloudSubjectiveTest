@@ -22,7 +22,7 @@ public class Stall : BasePlayer
     protected ComputeBuffer _posBuffer;
     protected ComputeBuffer _colorBuffer;
 
-    [SerializeField] private int[] StallAt = {60, 120, 180, 240};
+    [SerializeField] private int[] StallAt = { 60, 120, 180, 240 };
     private int[][] StallCount = { new int[]{0, 7, 0, 0},
                                     new int[]{0, 15, 0, 0},
                                     new int[]{0, 22, 0, 0},
@@ -71,7 +71,7 @@ public class Stall : BasePlayer
         List<int> result = new List<int>();
 
         int index = 0;
-        int tmp = - 1;
+        int tmp = -1;
         while (tmp < lastFrame)
         {
             if (tmp == stallAt[index] && stallCount[index] > 0) { stallCount[index]--; }
@@ -85,11 +85,11 @@ public class Stall : BasePlayer
     private static int[][] GenerateStallArrays(int[] stallAt, int[][] stallCount, int lastFrame)
     {
         List<int[]> results = new List<int[]>();
-        foreach(var c in stallCount)
+        foreach (var c in stallCount)
             results.Add(GenerateStallArray(stallAt, c, lastFrame));
         return results.ToArray();
     }
-protected override void Initialize()
+    protected override void Initialize()
     {
         _offset = new(0f, 0f, 0f);
         _scale = new(0.002f, 0.002f, 0.002f);
@@ -137,7 +137,12 @@ protected override void Initialize()
         _material.SetPass(0);
         _rp = new RenderParams(_material);
         _rp.worldBounds = new Bounds(Vector3.zero, 10000 * Vector3.one);
-        Graphics.RenderPrimitives(_rp, MeshTopology.Points, _buffer.Peek().NumVerts);
+
+        DPCFrameBuffer frontBuffer;
+        if (_buffer.TryPeek(out frontBuffer))
+        {
+            Graphics.RenderPrimitives(_rp, MeshTopology.Points, frontBuffer.NumVerts);
+        }
     }
     protected override void DeleteBuffers()
     {
@@ -154,11 +159,18 @@ protected override void Initialize()
     }
     protected override void SetCurrentFrameBuffer()
     {
-        _posBuffer = new ComputeBuffer(_buffer.Peek().NumVerts, 12);
-        _colorBuffer = new ComputeBuffer(_buffer.Peek().NumVerts, 4);
+        if (_buffer.TryPeek(out var frontBuffer))
+        {
+            _posBuffer = new ComputeBuffer(frontBuffer.NumVerts, 12);
+            _colorBuffer = new ComputeBuffer(frontBuffer.NumVerts, 4);
 
-        _posBuffer.SetData(_buffer.Peek().vertex);
-        _colorBuffer.SetData(_buffer.Peek().color);
+            _posBuffer.SetData(frontBuffer.vertex);
+            _colorBuffer.SetData(frontBuffer.color);
+        }
+        else
+        {
+            Debug.LogError("SetCurrentFrameBuffer: Buffer is empty.");
+        }
     }
 
     protected override void ImporterNextFrame()
@@ -174,7 +186,7 @@ protected override void Initialize()
         FrameIO.PCreader.LoadPlyFileData(filename, temp.vertex, temp.color);
         _buffer.Enqueue(temp);
 
-        ImportIndex += ImportIndex == ImportFrame[_TestNo].Length - 1 ? 0 : 1; 
+        ImportIndex += ImportIndex == ImportFrame[_TestNo].Length - 1 ? 0 : 1;
     }
 
     public void GoToNextTestSample()
@@ -194,7 +206,7 @@ protected override void Initialize()
 
         _content = new DPCHandler(_ContentName, _ContentRate, _StartFrame, _LastFrame, _FrameRate, ((float)ImportFrame[_TestNo].Length + 1) / _FrameRate);
 
-        _buffer = new MyMath.Queue<DPCFrameBuffer>(_bufferSize);
+        _buffer = new System.Collections.Concurrent.ConcurrentQueue<DPCFrameBuffer>();
         DeleteBuffers();
         Buffering();
         SetCurrentFrameBuffer();

@@ -1,6 +1,6 @@
 using System.Diagnostics;
 using System.Threading;
-using Unity.VisualScripting;
+using System.Collections.Concurrent;
 using UnityEngine;
 
 public abstract class BasePlayer : MonoBehaviour
@@ -12,7 +12,7 @@ public abstract class BasePlayer : MonoBehaviour
     protected Vector3 _rotation;
     protected Color _tint;
 
-    protected MyMath.Queue<DPCFrameBuffer> _buffer;
+    protected ConcurrentQueue<DPCFrameBuffer> _buffer;
     protected int _currentImportFrame = -1;
     protected int _currentRenderFrame;
 
@@ -25,11 +25,11 @@ public abstract class BasePlayer : MonoBehaviour
 
     // Timer display paramms
     private float _playStartedAt = -1f;          // wall-clock start
-    private float _pausedAccum   =  0f;          // time spent in Pause()
+    private float _pausedAccum = 0f;          // time spent in Pause()
 
-    public  float ElapsedTime =>                  // expose to UI
+    public float ElapsedTime =>                  // expose to UI
            _playStartedAt < 0 ? 0 :
-           (_isPlaying ?  Time.time              // live
+           (_isPlaying ? Time.time              // live
                         : _pauseStamp)           // frozen
            - _playStartedAt                      // since Play()
            - _pausedAccum;                       // minus pauses
@@ -39,7 +39,7 @@ public abstract class BasePlayer : MonoBehaviour
     protected virtual void Start()
     {
         Initialize();
-        _buffer = new MyMath.Queue<DPCFrameBuffer>(_bufferSize);
+        _buffer = new ConcurrentQueue<DPCFrameBuffer>();
         _currentImportFrame = _currentRenderFrame = GetStartFrame();
         DeleteBuffers();
         Buffering();
@@ -68,16 +68,21 @@ public abstract class BasePlayer : MonoBehaviour
                 // Donot Dequeue if buffer only have 1 frame left, stall
                 if (_buffer.Count > 1)
                 {
-                    // Dequeue the buffer every "targetFrameTime" (ms)
-                    _buffer.Dequeue();
-                    DeleteBuffers();
-                    SetCurrentFrameBuffer();
+                    if (_buffer.TryDequeue(out DPCFrameBuffer frameToDiscard))
+                    {
+                        DeleteBuffers();
+                        SetCurrentFrameBuffer();
 
-                    _currentImportFrame = (_currentImportFrame + 1) % (inPlayContent.GetLastFrame() + 1 - inPlayContent.GetStartFrame());
-                    _currentRenderFrame++;
+                        _currentImportFrame = (_currentImportFrame + 1) % (GetCurrentContent().GetLastFrame() + 1 - GetCurrentContent().GetStartFrame());
+                        // _currentRenderFrame++; // <-- FIX: REMOVE this line from here.
+                    }
                 }
                 else
                     UnityEngine.Debug.Log("Stall, Buffer runs out. Try increase buffer size.");
+
+                // FIX: ADD the increment here. This ensures the render counter always
+                // progresses, even during a stall, allowing the clip to finish.
+                _currentRenderFrame++;
 
                 stopwatch.Stop();
 
@@ -88,7 +93,9 @@ public abstract class BasePlayer : MonoBehaviour
             }
 
             int totalFrame = GetCurrentContent().GetDuration() <= 0 ? inPlayContent.GetLastFrame() : (int)(GetCurrentContent().GetDuration() * inPlayContent.GetFrameRate());
-            if (_currentRenderFrame == totalFrame) 
+
+            // FIX: Use >= for robustness. This check is now reachable.
+            if (_currentRenderFrame >= totalFrame)
             {
                 EndOfContent();
             }
@@ -123,19 +130,19 @@ public abstract class BasePlayer : MonoBehaviour
     public void Play()
     {
         if (_playStartedAt < 0) _playStartedAt = Time.time; // first ever Play()
-        else                    _pausedAccum   += Time.time - _pauseStamp;
+        else _pausedAccum += Time.time - _pauseStamp;
         _isPlaying = true;
     }
     public bool IsPlaying => _isPlaying;
     public void Pause()
     {
-        _isPlaying  = false;
+        _isPlaying = false;
         _pauseStamp = Time.time;
     }
     public void Replay()
     {
         _currentImportFrame = _currentRenderFrame = GetCurrentContent().GetStartFrame();
-        _buffer = new MyMath.Queue<DPCFrameBuffer>(_bufferSize);
+        _buffer = new ConcurrentQueue<DPCFrameBuffer>();
         DeleteBuffers();
         Buffering();
         SetCurrentFrameBuffer();

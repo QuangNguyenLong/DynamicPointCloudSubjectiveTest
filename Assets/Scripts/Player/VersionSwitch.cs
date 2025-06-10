@@ -36,7 +36,7 @@ public class VersionSwitch : BasePlayer
     {
         if (_currentImportFrame == -1)
             _currentImportFrame = 0;
-         return _combinations[_TestNo][_currentImportFrame % 300 / 60].Content; 
+        return _combinations[_TestNo][_currentImportFrame % 300 / 60].Content;
     }
 
     protected override int GetStartFrame() => GetCurrentContent().GetStartFrame();
@@ -124,16 +124,27 @@ public class VersionSwitch : BasePlayer
         _material.SetPass(0);
         _rp = new RenderParams(_material);
         _rp.worldBounds = new Bounds(Vector3.zero, 10000 * Vector3.one);
-        Graphics.RenderPrimitives(_rp, MeshTopology.Points, _buffer.Peek().NumVerts);
+        DPCFrameBuffer frontBuffer;
+        if (_buffer.TryPeek(out frontBuffer))
+        {
+            Graphics.RenderPrimitives(_rp, MeshTopology.Points, frontBuffer.NumVerts);
+        }
     }
 
     protected override void SetCurrentFrameBuffer()
     {
-        _posBuffer = new ComputeBuffer(_buffer.Peek().NumVerts, 12);
-        _colorBuffer = new ComputeBuffer(_buffer.Peek().NumVerts, 4);
+        if (_buffer.TryPeek(out var frontBuffer))
+        {
+            _posBuffer = new ComputeBuffer(frontBuffer.NumVerts, 12);
+            _colorBuffer = new ComputeBuffer(frontBuffer.NumVerts, 4);
 
-        _posBuffer.SetData(_buffer.Peek().vertex);
-        _colorBuffer.SetData(_buffer.Peek().color);
+            _posBuffer.SetData(frontBuffer.vertex);
+            _colorBuffer.SetData(frontBuffer.color);
+        }
+        else
+        {
+            Debug.LogError("SetCurrentFrameBuffer: Buffer is empty.");
+        }
     }
 
     protected override void UpdatePosition()
@@ -151,19 +162,19 @@ public class VersionSwitch : BasePlayer
         DeleteBuffers();
         if (_TestNo == _combinations.Length - 1)
         {
-            if(nextcontent != null)
+            if (nextcontent != null)
                 SceneManager.LoadScene($"Assets/Scenes/{nextcontent}VersionSwitch.unity");
             return;
         }
-        _TestNo ++;
+        _TestNo++;
         _currentImportFrame = _currentRenderFrame = GetCurrentContent().GetStartFrame();
-        _buffer = new MyMath.Queue<DPCFrameBuffer>(_bufferSize);
+        _buffer = new System.Collections.Concurrent.ConcurrentQueue<DPCFrameBuffer>();
         Buffering();
         SetCurrentFrameBuffer();
         Play();
     }
 
-    public void SaveMOS5(){File.AppendAllText(_MOSDataPath, $"{_TestNo},5\n");}
+    public void SaveMOS5() { File.AppendAllText(_MOSDataPath, $"{_TestNo},5\n"); }
     public void SaveMOS4() { File.AppendAllText(_MOSDataPath, $"{_TestNo},4\n"); }
     public void SaveMOS3() { File.AppendAllText(_MOSDataPath, $"{_TestNo},3\n"); }
     public void SaveMOS2() { File.AppendAllText(_MOSDataPath, $"{_TestNo},2\n"); }

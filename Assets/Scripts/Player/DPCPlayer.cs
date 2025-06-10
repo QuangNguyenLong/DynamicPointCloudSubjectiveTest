@@ -8,7 +8,7 @@ public class DPCPlayer : BasePlayer
     [SerializeField] private int _StartFrame = 0;
     [SerializeField] private int _LastFrame = 299;
     [SerializeField] private int _FrameRate = 30;
-    public Vector3 OffSet = new (0f, 0f, 0f);
+    public Vector3 OffSet = new(0f, 0f, 0f);
     public Vector3 Rotation = new(0f, 0f, 0f);
 
     protected ComputeBuffer _posBuffer;
@@ -46,7 +46,11 @@ public class DPCPlayer : BasePlayer
 
         _rp = new RenderParams(_material);
         _rp.worldBounds = new Bounds(Vector3.zero, 10000 * Vector3.one);
-        Graphics.RenderPrimitives(_rp, MeshTopology.Points, _buffer.Peek().NumVerts);
+        DPCFrameBuffer frontBuffer;
+        if (_buffer.TryPeek(out frontBuffer))
+        {
+            Graphics.RenderPrimitives(_rp, MeshTopology.Points, frontBuffer.NumVerts);
+        }
     }
     protected override void DeleteBuffers()
     {
@@ -63,11 +67,18 @@ public class DPCPlayer : BasePlayer
     }
     protected override void SetCurrentFrameBuffer()
     {
-        _posBuffer = new ComputeBuffer(_buffer.Peek().NumVerts, 12);
-        _colorBuffer = new ComputeBuffer(_buffer.Peek().NumVerts, 4);
+        if (_buffer.TryPeek(out var frontBuffer))
+        {
+            _posBuffer = new ComputeBuffer(frontBuffer.NumVerts, 12);
+            _colorBuffer = new ComputeBuffer(frontBuffer.NumVerts, 4);
 
-        _posBuffer.SetData(_buffer.Peek().vertex);
-        _colorBuffer.SetData(_buffer.Peek().color);
+            _posBuffer.SetData(frontBuffer.vertex);
+            _colorBuffer.SetData(frontBuffer.color);
+        }
+        else
+        {
+            Debug.LogError("SetCurrentFrameBuffer: Buffer is empty.");
+        }
     }
 
     protected override void ImporterNextFrame()
