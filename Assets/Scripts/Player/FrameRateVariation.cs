@@ -15,7 +15,7 @@ public class FrameRateVariation : BasePlayer
 {
     // ───────────────────── inspector ─────────────────────
     [Header("Experiment setup")]
-    [SerializeField, Range(0, 41)] private int _variantIndex = 0;
+    [SerializeField, Range(0, 29)] private int _variantIndex = 0;
     [SerializeField] private string _nextScene = "";
 
     [Header("Content")]
@@ -64,7 +64,7 @@ public class FrameRateVariation : BasePlayer
 
         if (_variantIndex < 0 || _variantIndex >= _variants.Count)
             throw new ArgumentOutOfRangeException(nameof(_variantIndex),
-                "Illegal variant index (0-41 expected)");
+                "Illegal variant index (0-29 expected)");
 
         _importFrames = BuildPlayedSequence(_variants[_variantIndex]);
         _content = new DPCHandler(_contentName, _contentRate, _startFrame,
@@ -362,25 +362,22 @@ public class FrameRateVariation : BasePlayer
             SingleDip(20,15)   // 9
         });
 
-        // ─── 10-21  Micro-stutter: fixed width=3f (100 ms) ─────────────────────
-        _variants.AddRange(MicroGrid(fixedWidth: true));
+        // ─── 10-21  Micro-stutter ─────────────────────
+        _variants.AddRange(MicroGrid());
 
-        // ─── 22-33  Micro-stutter: variable width 1/3/8f ───────────────────────
-        _variants.AddRange(MicroGrid(fixedWidth: false));
-
-        // ─── 34-39  Jitter (bounded random walk) ───────────────────────────────
+        // ─── 22-27  Jitter (bounded random walk) ───────────────────────────────
         _variants.AddRange(new[]{
-            Jitter(28,2,3,  seed:101),   // 34
-            Jitter(28,2,15, seed:102),   // 35
-            Jitter(25,5,3,  seed:103),   // 36
-            Jitter(25,5,15, seed:104),   // 37
-            Jitter(20,10,3, seed:105),   // 38
-            Jitter(20,10,15,seed:106)    // 39
+            Jitter(28,2,3,  seed:42),   // 22
+            Jitter(28,2,15, seed:42),   // 23
+            Jitter(25,5,3,  seed:42),   // 24
+            Jitter(25,5,15, seed:42),   // 25
+            Jitter(20,10,3, seed:42),   // 26
+            Jitter(20,10,15,seed:42)    // 27
         });
 
-        // ─── 40-41  Hard jitter controls (drop 10 % / 20 %) ────────────────────
-        _variants.Add(HardJitter(0.10f, seed: 201));  // 40
-        _variants.Add(HardJitter(0.20f, seed: 202));  // 41
+        // ─── 28-29  Hard jitter controls (drop 10 % / 20 %) ────────────────────
+        _variants.Add(HardJitter(0.10f, seed: 42));  // 28
+        _variants.Add(HardJitter(0.20f, seed: 42));  // 29
     }
 
     // ---------------- helper builders -----------------------------------------
@@ -410,45 +407,30 @@ public class FrameRateVariation : BasePlayer
         };
     }
 
-    private IEnumerable<FRVVariant> MicroGrid(bool fixedWidth)
+    private IEnumerable<FRVVariant> MicroGrid()
     {
-        int[] bases = { 30, 30, 30, 30, 25, 25, 25, 25, 20, 20, 20, 20 };
-        int[] dips = { 25, 20, 25, 20, 20, 15, 20, 15, 15, 15, 15, 15 };
-        int[] ints = { 60, 60, 120, 120, 60, 60, 120, 120, 60, 60, 120, 120 };
+        int[] bases =     { 30, 30, 30, 30, 30, 30, 25, 25, 25, 25, 20, 20 };
+        int[] dips =      { 25, 20, 15, 25, 20, 15, 20, 15, 20, 15, 15, 15 };
+        int[] intervals = { 120, 120, 120, 60, 60, 60, 120, 120, 60, 60, 120, 60 };
+        int duration = 15; // Fixed duration as per Python script
 
         for (int i = 0; i < bases.Length; i++)
         {
-            int baseFps = bases[i], dipFps = dips[i], interval = ints[i];
-            yield return MicroStutter(baseFps, dipFps, interval, fixedWidth);
+            yield return MicroStutter(bases[i], dips[i], intervals[i], duration);
         }
     }
 
-    private FRVVariant MicroStutter(int baseFps, int dipFps, int intervalFrames,
-                                    bool fixedWidth)
+    private FRVVariant MicroStutter(int baseFps, int dipFps, int intervalFrames, int duration)
     {
         var baseStride = Mathf.RoundToInt((float)SOURCE_FPS / baseFps);
         var dipStride = Mathf.RoundToInt((float)SOURCE_FPS / dipFps);
-        int[] widths = fixedWidth ? new[] { 3 } : new[] { 1, 3, 8 };
-        string name = fixedWidth
-            ? $"Micro_{baseFps}to{dipFps}_Every{intervalFrames}f_W3f"
-            : $"MicroVar_{baseFps}to{dipFps}_Every{intervalFrames}f_W1-3-8f";
+        string name = $"MicroStutter_{baseFps}to{dipFps}_Every{intervalFrames}f_Duration{duration}f";
 
         return new FRVVariant
         {
-            FpsForFrame = f =>
-            {
-                int cycle = f / intervalFrames;
-                int w = widths[cycle % widths.Length];
-                return w == 0 ? baseFps : dipFps;
-            },
+            FpsForFrame = f => (f % intervalFrames < duration) ? dipFps : baseFps,
             Name = name,
-            StrideForFrame = f =>
-            {
-                int cycle = f / intervalFrames;
-                int off = f % intervalFrames;
-                int w = widths[cycle % widths.Length];
-                return off < w ? dipStride : baseStride;
-            }
+            StrideForFrame = f => (f % intervalFrames < duration) ? dipStride : baseStride
         };
     }
 
