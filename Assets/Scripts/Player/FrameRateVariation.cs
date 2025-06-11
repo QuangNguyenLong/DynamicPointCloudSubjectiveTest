@@ -439,12 +439,12 @@ public class FrameRateVariation : BasePlayer
         var r = new System.Random(seed);
         // pre-compute stride table (one entry per step)
         int steps = Mathf.CeilToInt((float)TOTAL_FRAMES / stepPeriod) + 1;
-        int[] table = new int[steps];
+        int[] fpsTable = new int[steps]; // Table to store FPS values
         int curFps = targetFps;
 
         for (int i = 0; i < steps; i++)
         {
-            table[i] = Mathf.RoundToInt((float)SOURCE_FPS / curFps);
+            fpsTable[i] = curFps; // Store the current FPS for this step
 
             int delta = r.Next(3) - 1; // {-1,0,+1}
             curFps = Mathf.Clamp(curFps + delta, targetFps - range, targetFps + range);
@@ -452,9 +452,13 @@ public class FrameRateVariation : BasePlayer
 
         return new FRVVariant
         {
-            FpsForFrame = _ => targetFps,
+            FpsForFrame = f => fpsTable[f / stepPeriod],
             Name = $"Jitter_{targetFps}_±{range}_Every{stepPeriod}f",
-            StrideForFrame = f => table[f / stepPeriod]
+            StrideForFrame = f => {
+                int currentFrameFps = fpsTable[f / stepPeriod];
+                if (currentFrameFps == 0) return int.MaxValue; // Or some large number to signify a stall if FPS is 0
+                return Mathf.RoundToInt((float)SOURCE_FPS / currentFrameFps);
+            }
         };
     }
 
