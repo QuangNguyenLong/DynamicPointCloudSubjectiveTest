@@ -468,9 +468,9 @@ public class FrameRateVariation : BasePlayer
 
         return new FRVVariant
         {
-            FpsForFrame = _ => SOURCE_FPS,
+            FpsForFrame = f => drops.Contains(f) ? 0 : SOURCE_FPS,
             Name = $"HardJitter_Drop{dropRatio:P0}",
-            StrideForFrame = f => drops.Contains(f) ? 2 : 1  // skip this frame? stride=2
+            StrideForFrame = f => 1
         };
     }
 
