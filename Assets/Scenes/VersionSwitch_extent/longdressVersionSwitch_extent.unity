@@ -2505,7 +2505,7 @@ MonoBehaviour:
   _bufferSize: 30
   _shader: {fileID: 0}
   contentName: longdress
-  nextcontent: soldier
+  nextcontent: Assets/Scenes/VersionSwitch_extent/soldierVersionSwitch_extent
   combinations: []
   UI: {fileID: 232886422}
 --- !u!1 &1663089923

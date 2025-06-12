@@ -181,7 +181,7 @@ public class VersionSwitch : BasePlayer
         if (_TestNo == _combinations.Length - 1)
         {
             if (nextcontent != null)
-                SceneManager.LoadScene($"Assets/Scenes/{nextcontent}VersionSwitch.unity");
+                SceneManager.LoadScene($"{nextcontent}.unity");
             return;
         }
         _TestNo++;
