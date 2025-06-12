@@ -2506,7 +2506,107 @@ MonoBehaviour:
   _shader: {fileID: 0}
   contentName: longdress
   nextcontent: Assets/Scenes/VersionSwitch_extent/soldierVersionSwitch_extent
-  combinations: []
+  combinations:
+  - segment_1: 0
+    segment_2: 0
+    segment_3: 0
+    segment_4: 0
+    segment_5: 0
+  - segment_1: 1
+    segment_2: 1
+    segment_3: 1
+    segment_4: 0
+    segment_5: 0
+  - segment_1: 0
+    segment_2: 1
+    segment_3: 1
+    segment_4: 1
+    segment_5: 2
+  - segment_1: 2
+    segment_2: 0
+    segment_3: 2
+    segment_4: 0
+    segment_5: 2
+  - segment_1: 1
+    segment_2: 2
+    segment_3: 2
+    segment_4: 1
+    segment_5: 2
+  - segment_1: 2
+    segment_2: 2
+    segment_3: 2
+    segment_4: 2
+    segment_5: 0
+  - segment_1: 1
+    segment_2: 2
+    segment_3: 0
+    segment_4: 3
+    segment_5: 3
+  - segment_1: 2
+    segment_2: 1
+    segment_3: 2
+    segment_4: 2
+    segment_5: 3
+  - segment_1: 1
+    segment_2: 2
+    segment_3: 2
+    segment_4: 3
+    segment_5: 2
+  - segment_1: 3
+    segment_2: 3
+    segment_3: 2
+    segment_4: 2
+    segment_5: 1
+  - segment_1: 3
+    segment_2: 2
+    segment_3: 2
+    segment_4: 3
+    segment_5: 2
+  - segment_1: 3
+    segment_2: 3
+    segment_3: 2
+    segment_4: 3
+    segment_5: 2
+  - segment_1: 3
+    segment_2: 3
+    segment_3: 3
+    segment_4: 3
+    segment_5: 1
+  - segment_1: 3
+    segment_2: 3
+    segment_3: 2
+    segment_4: 3
+    segment_5: 3
+  - segment_1: 4
+    segment_2: 3
+    segment_3: 3
+    segment_4: 3
+    segment_5: 2
+  - segment_1: 4
+    segment_2: 3
+    segment_3: 2
+    segment_4: 3
+    segment_5: 3
+  - segment_1: 4
+    segment_2: 4
+    segment_3: 4
+    segment_4: 2
+    segment_5: 2
+  - segment_1: 3
+    segment_2: 4
+    segment_3: 4
+    segment_4: 4
+    segment_5: 2
+  - segment_1: 4
+    segment_2: 4
+    segment_3: 3
+    segment_4: 3
+    segment_5: 4
+  - segment_1: 4
+    segment_2: 4
+    segment_3: 4
+    segment_4: 4
+    segment_5: 4
   UI: {fileID: 232886422}
 --- !u!1 &1663089923
 GameObject:
