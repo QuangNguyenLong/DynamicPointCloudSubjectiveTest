@@ -1,6 +1,6 @@
 using System.Diagnostics;
 using System.Threading;
-using System.Collections.Concurrent;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public abstract class BasePlayer : MonoBehaviour
@@ -12,7 +12,7 @@ public abstract class BasePlayer : MonoBehaviour
     protected Vector3 _rotation;
     protected Color _tint;
 
-    protected ConcurrentQueue<DPCFrameBuffer> _buffer;
+    protected MyMath.Queue<DPCFrameBuffer> _buffer;
     protected int _currentImportFrame = -1;
     protected int _currentRenderFrame;
 
@@ -23,67 +23,74 @@ public abstract class BasePlayer : MonoBehaviour
     protected bool _isRotating = false;
     protected bool _isClockwise = true;
 
-    // Timer display paramms
-    private float _playStartedAt = -1f;          // wall-clock start
-    private float _pausedAccum = 0f;          // time spent in Pause()
+    protected bool _isBuffering = false;
 
-    public float ElapsedTime =>                  // expose to UI
-           _playStartedAt < 0 ? 0 :
-           (_isPlaying ? Time.time              // live
-                        : _pauseStamp)           // frozen
-           - _playStartedAt                      // since Play()
-           - _pausedAccum;                       // minus pauses
-
-    private float _pauseStamp;                   // when Pause began
-
+    protected bool _startedImport = false;
+    private void StartImportThread()
+    {
+        Thread importThread = new(() =>
+        {
+            while (true)
+            {
+                if (_startedImport)
+                {
+                    //lock (_buffer)
+                    //{
+                        if (_buffer.Count < _bufferSize)
+                        {
+                        var inPlayContent = GetCurrentContent();
+                        int totalFrame = GetCurrentContent().GetDuration() <= 0 ? inPlayContent.GetLastFrame() : (int)(GetCurrentContent().GetDuration() * inPlayContent.GetFrameRate());
+                        _currentImportFrame = _currentImportFrame < totalFrame ? (_currentImportFrame + 1) : totalFrame;
+                        ImporterNextFrame();
+                        }
+                    //}
+                }
+            }
+        });
+        importThread.Start();
+    }
     protected virtual void Start()
     {
         Initialize();
-        _buffer = new ConcurrentQueue<DPCFrameBuffer>();
+        _buffer = new MyMath.Queue<DPCFrameBuffer>(_bufferSize);
         _currentImportFrame = _currentRenderFrame = GetStartFrame();
         DeleteBuffers();
         Buffering();
         SetCurrentFrameBuffer();
+        StartImportThread();
+        _startedImport = true;
     }
     protected Stopwatch stopwatch = new();
     protected float _timer = 0.0f;
     protected virtual void Update()
     {
+        if (_isBuffering)
+            return;
         var inPlayContent = GetCurrentContent();
         float targetFrameTime = 1.0f / inPlayContent.GetFrameRate();
+        int totalFrame = GetCurrentContent().GetDuration() <= 0 ? inPlayContent.GetLastFrame() : (int)(GetCurrentContent().GetDuration() * inPlayContent.GetFrameRate());
         UpdatePosition();
-        if (_isPlaying)
+        if (IsPlaying)
         {
             _timer += Time.deltaTime;
             if (_timer + stopwatch.ElapsedMilliseconds / 1000.0f >= targetFrameTime)
             {
                 stopwatch.Restart();
 
-                if (_buffer.Count < _bufferSize)
-                {
-                    Thread import = new(ImporterNextFrame);
-                    import.Start();
-                }
-
                 // Donot Dequeue if buffer only have 1 frame left, stall
                 if (_buffer.Count > 1)
                 {
-                    if (_buffer.TryDequeue(out DPCFrameBuffer frameToDiscard))
-                    {
-                        DeleteBuffers();
-                        SetCurrentFrameBuffer();
+                    // Dequeue the buffer every "targetFrameTime" (ms)
+                    _buffer.Dequeue();
+                    DeleteBuffers();
+                    SetCurrentFrameBuffer();
 
-                        _currentImportFrame = (_currentImportFrame + 1) % (GetCurrentContent().GetLastFrame() + 1 - GetCurrentContent().GetStartFrame());
-                        // _currentRenderFrame++; // <-- FIX: REMOVE this line from here.
-                    }
+                    _currentRenderFrame = _currentRenderFrame < totalFrame ? (_currentRenderFrame + 1) : totalFrame;
                 }
                 else
+                {
                     UnityEngine.Debug.Log("Stall, Buffer runs out. Try increase buffer size.");
-
-                // FIX: ADD the increment here. This ensures the render counter always
-                // progresses, even during a stall, allowing the clip to finish.
-                _currentRenderFrame++;
-
+                }
                 stopwatch.Stop();
 
                 if (_timer + stopwatch.ElapsedMilliseconds / 1000.0f < targetFrameTime)
@@ -92,13 +99,12 @@ public abstract class BasePlayer : MonoBehaviour
                 _timer -= targetFrameTime; // Reset the timer
             }
 
-            int totalFrame = GetCurrentContent().GetDuration() <= 0 ? inPlayContent.GetLastFrame() : (int)(GetCurrentContent().GetDuration() * inPlayContent.GetFrameRate());
-
-            // FIX: Use >= for robustness. This check is now reachable.
-            if (_currentRenderFrame >= totalFrame)
+            if (_currentRenderFrame == totalFrame)
             {
+                _startedImport = false;
                 EndOfContent();
             }
+
         }
         RenderCurrentFrame();
     }
@@ -112,10 +118,13 @@ public abstract class BasePlayer : MonoBehaviour
     }
     protected virtual void Buffering()
     {
+        _isBuffering = true;
         for (int i = 0; i < _bufferSize; i++, _currentImportFrame++)
         {
             ImporterNextFrame();
         }
+        _isBuffering = false;
+
     }
     protected virtual void EndOfContent() { Pause(); }
     protected abstract void Initialize();
@@ -127,22 +136,13 @@ public abstract class BasePlayer : MonoBehaviour
     protected abstract void SetCurrentFrameBuffer();
     protected abstract void ImporterNextFrame();
 
-    public void Play()
-    {
-        if (_playStartedAt < 0) _playStartedAt = Time.time; // first ever Play()
-        else _pausedAccum += Time.time - _pauseStamp;
-        _isPlaying = true;
-    }
+    public void Play() { _isPlaying = true; }
     public bool IsPlaying => _isPlaying;
-    public void Pause()
-    {
-        _isPlaying = false;
-        _pauseStamp = Time.time;
-    }
+    public void Pause() { _isPlaying = false; }
     public void Replay()
     {
         _currentImportFrame = _currentRenderFrame = GetCurrentContent().GetStartFrame();
-        _buffer = new ConcurrentQueue<DPCFrameBuffer>();
+        _buffer = new MyMath.Queue<DPCFrameBuffer>(_bufferSize);
         DeleteBuffers();
         Buffering();
         SetCurrentFrameBuffer();
@@ -150,5 +150,5 @@ public abstract class BasePlayer : MonoBehaviour
     }
     public Vector3 Offset => _offset;
     public float Duration => GetCurrentContent().GetDuration() <= 0 ? (float)(GetCurrentContent().GetLastFrame() - GetCurrentContent().GetStartFrame() + 1) / GetCurrentContent().GetFrameRate() : GetCurrentContent().GetDuration();
-    public int FramesLeft { get { return GetCurrentContent().GetLastFrame() - _currentRenderFrame; } }
+
 }

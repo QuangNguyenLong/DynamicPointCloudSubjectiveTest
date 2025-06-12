@@ -46,11 +46,7 @@ public class DPCPlayer : BasePlayer
 
         _rp = new RenderParams(_material);
         _rp.worldBounds = new Bounds(Vector3.zero, 10000 * Vector3.one);
-        DPCFrameBuffer frontBuffer;
-        if (_buffer.TryPeek(out frontBuffer))
-        {
-            Graphics.RenderPrimitives(_rp, MeshTopology.Points, frontBuffer.NumVerts);
-        }
+        Graphics.RenderPrimitives(_rp, MeshTopology.Points, _buffer.Peek().NumVerts);
     }
     protected override void DeleteBuffers()
     {
@@ -67,18 +63,11 @@ public class DPCPlayer : BasePlayer
     }
     protected override void SetCurrentFrameBuffer()
     {
-        if (_buffer.TryPeek(out var frontBuffer))
-        {
-            _posBuffer = new ComputeBuffer(frontBuffer.NumVerts, 12);
-            _colorBuffer = new ComputeBuffer(frontBuffer.NumVerts, 4);
+        _posBuffer = new ComputeBuffer(_buffer.Peek().NumVerts, 12);
+        _colorBuffer = new ComputeBuffer(_buffer.Peek().NumVerts, 4);
 
-            _posBuffer.SetData(frontBuffer.vertex);
-            _colorBuffer.SetData(frontBuffer.color);
-        }
-        else
-        {
-            Debug.LogError("SetCurrentFrameBuffer: Buffer is empty.");
-        }
+        _posBuffer.SetData(_buffer.Peek().vertex);
+        _colorBuffer.SetData(_buffer.Peek().color);
     }
 
     protected override void ImporterNextFrame()
@@ -94,4 +83,7 @@ public class DPCPlayer : BasePlayer
         FrameIO.PCreader.LoadPlyFileData(filename, temp.vertex, temp.color);
         _buffer.Enqueue(temp);
     }
+
+    public int FramesLeft { get { return _LastFrame - _currentRenderFrame; } }
+
 }

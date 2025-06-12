@@ -18,6 +18,21 @@ EditorBuildSettings:
     path: Assets/Scenes/VersionSwitch/lootVersionSwitch.unity
     guid: 770f9be3f0e69fc44a3ba8c45452afcf
   - enabled: 1
+    path: Assets/Scenes/VersionSwitch_extent/longdressVersionSwitch.unity
+    guid: bff0b01c256e14441afe60e96b2891e6
+  - enabled: 1
+    path: Assets/Scenes/VersionSwitch_extent/lootVersionSwitch.unity
+    guid: 9f04fdeb8324efe4f9e5bfef209050fd
+  - enabled: 1
+    path: Assets/Scenes/VersionSwitch_extent/redandblackVersionSwitch.unity
+    guid: f1dc596b937ce594595886efb03f12e5
+  - enabled: 1
+    path: Assets/Scenes/VersionSwitch_extent/soldierVersionSwitch.unity
+    guid: 3bab35f60b432ba4580114736ba6ab43
+  - enabled: 1
+    path: Assets/Scenes/VersionSwitch_extent/Training.unity
+    guid: 513f87c209bf97b4489af95ce1c99850
+  - enabled: 1
     path: Assets/Scenes/Stall/longdressStall.unity
     guid: 5c59c58d9f57579469a699b1b144bfce
   - enabled: 1
