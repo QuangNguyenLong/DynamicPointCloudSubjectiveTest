@@ -494,13 +494,13 @@ public class FrameRateVariation : BasePlayer
     private int[] BuildPlayedSequence(FRVVariant v)
     {
         var schedule = new List<int>(TOTAL_FRAMES); // The schedule will have TOTAL_FRAMES entries
-        float deliveryClock = 0.0f;
+        double deliveryClock = 0.0; 
         int lastDeliveredFrameIndex = -1;
         int lastShownFrame = _startFrame; // Initialize with the first frame
 
         for (int displayFrame = 0; displayFrame < TOTAL_FRAMES; ++displayFrame)
         {
-            float targetFps = v.FpsForFrame(displayFrame);
+            double targetFps = v.FpsForFrame(displayFrame);
 
             // The ideal "live" frame we should be seeing if there were no issues.
             // Assuming DISPLAY_FPS is the same as SOURCE_FPS for simplicity in this calculation,
@@ -515,9 +515,9 @@ public class FrameRateVariation : BasePlayer
             // Advance our delivery clock based on the current target FPS relative to display FPS.
             // delivery_clock += target_fps / DISPLAY_FPS;
             // The display FPS is implicitly 30 (because TOTAL_FRAMES is 300 over 30 FPS content)
-            deliveryClock += targetFps / SOURCE_FPS; // Use SOURCE_FPS as the reference for calculation from python script
+            deliveryClock += targetFps / (double)SOURCE_FPS; // Use SOURCE_FPS as the reference for calculation from python script
 
-            int currentDeliveredFrameIndex = Mathf.FloorToInt(deliveryClock);
+            int currentDeliveredFrameIndex = (int)Math.Floor(deliveryClock);
 
             int frameToShow;
             if (currentDeliveredFrameIndex > lastDeliveredFrameIndex)
