@@ -15,7 +15,7 @@ public class FrameRateVariation : BasePlayer
 {
     // ───────────────────── inspector ─────────────────────
     [Header("Experiment setup")]
-    [SerializeField, Range(0, 29)] private int _variantIndex = 0;
+    [SerializeField, Range(0, 39)] private int _variantIndex = 0;
     [SerializeField] private string _nextScene = "";
 
     [Header("Content")]
@@ -362,22 +362,21 @@ public class FrameRateVariation : BasePlayer
             SingleDip(20,15)   // 9
         });
 
-        // ─── 10-21  Micro-stutter ─────────────────────
+        // ─── 10-33  Micro-stutter ─────────────────────
         _variants.AddRange(MicroGrid());
 
-        // ─── 22-27  Jitter (bounded random walk) ───────────────────────────────
+        // ─── 34-37  Jitter (bounded random walk) ───────────────────────────────
+        // Interval = 1 means that every frame has a new FPS value.
         _variants.AddRange(new[]{
-            Jitter(28,2,3,  seed:42),   // 22
-            Jitter(28,2,15, seed:42),   // 23
-            Jitter(25,5,3,  seed:42),   // 24
-            Jitter(25,5,15, seed:42),   // 25
-            Jitter(20,10,3, seed:42),   // 26
-            Jitter(20,10,15,seed:42)    // 27
+            Jitter(28,2,1,  seed:42),   // 34
+            Jitter(25,5,1,  seed:42),   // 35
+            Jitter(20,10,1,seed:42),    // 36
         });
 
-        // ─── 28-29  Hard jitter controls (drop 10 % / 20 %) ────────────────────
-        _variants.Add(HardJitter(0.10f, seed: 42));  // 28
-        _variants.Add(HardJitter(0.20f, seed: 42));  // 29
+        // ───   Hard jitter controls (drop 10 % / 15 % / 20 %) ────────────────────
+        _variants.Add(HardJitter(0.10f, seed: 42));  // 37
+        _variants.Add(HardJitter(0.15f, seed: 42));  // 38
+        _variants.Add(HardJitter(0.20f, seed: 42));  // 39
     }
 
     // ---------------- helper builders -----------------------------------------
@@ -409,14 +408,26 @@ public class FrameRateVariation : BasePlayer
 
     private IEnumerable<FRVVariant> MicroGrid()
     {
-        int[] bases =     { 30, 30, 30, 30, 30, 30, 25, 25, 25, 25, 20, 20 };
-        int[] dips =      { 25, 20, 15, 25, 20, 15, 20, 15, 20, 15, 15, 15 };
-        int[] intervals = { 120, 120, 120, 60, 60, 60, 120, 120, 60, 60, 120, 60 };
-        int duration = 15; // Fixed duration as per Python script
+        // Algorithmically generate all micro-stutter variants
+        int[] baseFpsOptions = { 30, 25, 20 };
+        int[] dipFpsOptions = { 25, 20, 15 };
+        int[] intervalFramesOptions = { 30, 60 };
+        int[] durationOptions = { 5, 15 };
 
-        for (int i = 0; i < bases.Length; i++)
+        foreach (int baseFps in baseFpsOptions)
         {
-            yield return MicroStutter(bases[i], dips[i], intervals[i], duration);
+            foreach (int dipFps in dipFpsOptions)
+            {
+            if (dipFps >= baseFps) continue; // Only allow dips below base
+
+            foreach (int intervalFrames in intervalFramesOptions)
+            {
+                foreach (int duration in durationOptions)
+                {
+                yield return MicroStutter(baseFps, dipFps, intervalFrames, duration);
+                }
+            }
+            }
         }
     }
 
