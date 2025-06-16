@@ -27,6 +27,10 @@ This elegant mechanism ensures that by simply defining a function for the `targe
 
 The simulation includes several categories of variants designed to test different aspects of frame rate instability.
 
+>The philosophy of design is that the amount of frame-rate stochasticity (entropy) increases from baseline -> single macro drop -> periodic micro stutter -> random-walk jitter ~ hard-jitter
+
+>There are 5 level of ratings and 4 level of baseline frame rates, leaving room for user preference variation.
+
 ### 1. Baseline Variants
 These variants provide a stable, constant frame rate to act as a control group for the study.
 * **Description:** The video plays at a consistent FPS throughout the entire 10-second clip.
@@ -39,7 +43,7 @@ These variants test the impact of a single, noticeable dip in quality in the mid
 
 ### 3. Micro-Stutter Variants
 These variants simulate frequent, short stutters or hitches.
-* **Description:** The frame rate repeatedly drops from a base FPS to a lower dip FPS for a very short duration (e.g., 1, 3, or 8 frames) at regular intervals (e.g., every 60 or 120 frames).
+* **Description:** The frame rate repeatedly drops from a base (30, 25, 20) FPS to a lower dip (25, 20, 15) FPS for a duration (e.g., 5, 15 frames) at regular intervals (e.g., every 30 or 60 frames).
 * **Implementations:** A wide grid of combinations, varying the base FPS, dip FPS, and the interval of the stutter events.
 
 ### 4. Jitter and Emergent Stall Variants
@@ -47,18 +51,18 @@ This group simulates more unpredictable or chaotic frame rate patterns.
 
 * **Random Walk Jitter:**
     * **Description:** The frame rate fluctuates randomly around a target average. At fixed time intervals (`stepPeriod`), the FPS can increase, decrease, or stay the same by a small amount, but is clamped within a predefined range. This simulates a network connection with unstable but bounded bandwidth.
-    * **Implementations:** Varies the target FPS, the random range (e.g., ±5 FPS), and the update period.
+    * **Implementations:** Varies the target FPS, the random range (e.g., ±2, ±5, ±10 FPS), and the update period (5, 15 frames).
 
 * **Hard Jitter (Frame Drops):**
     * **Description:** This simulates severe network issues by causing a certain percentage of frames to be dropped entirely. The generator randomly selects frames and sets their target FPS to 0, forcing a stall.
-    * **Implementations:** Variants that drop 10% and 20% of the total frames.
+    * **Implementations:** Variants that drop 10% and 20% of the total frames (repetition allowed).
 
 ## III. How to Run the Simulation
 
 The project is controlled via the `FrameRateVariation.cs` script attached to a GameObject in a Unity scene.
 
-1.  **Select a Variant:** In the Unity Inspector, set the `Variant Index` field (from 0 to 41) on the `DynamicPC` -> `{content_name}` component to choose the desired test pattern.
-2.  **Configure Content:** Ensure the `Content Name` field matches the name of your point cloud data folder.
+1.  **Select a Variant:** In the Unity Inspector, set the `Variant Index` field (from 0 to 39) on the `DynamicPC` -> `{content_name}` component (e.g. longdress,soldier,...) to choose the desired test pattern.
+2.  **Configure Content:** Ensure the `Content Name` field in the inspector panel matches the name of your point cloud data folder.
 3.  **Run Scene:** Play the scene in the Unity Editor. The chosen variant will play automatically.
-4.  **Provide Score:** After the sequence finishes, a UI will appear prompting for a MOS score from 1 to 5. Clicking a score button saves the result.
+4.  **Provide Score:** After the sequence finishes, a UI will appear prompting for a rating score from 1 to 5. Clicking a score button saves the result.
 5.  **Output:** The results are saved to a text file in the `MOS_FRV` directory, named `MOS.user{id}.txt`. Each entry includes the variant index, the user's score, the clip duration, and the full comma-separated frame sequence that was played. The system then automatically proceeds to the next variant in the sequence.
